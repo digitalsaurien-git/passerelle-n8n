@@ -167,13 +167,13 @@
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 2.2,
+      "typeVersion": 1.8,
       "position": [
-        1168,
-        656
+        1376,
+        528
       ],
       "id": "aec5e908-99dc-4a5c-914a-540c2c07b6cc",
-      "name": "MasterAI Agent"
+      "name": "MasterAI Agent - OpenAI"
     },
     {
       "parameters": {
@@ -188,8 +188,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        880,
-        1056
+        1376,
+        912
       ],
       "id": "2454d66c-458e-4f46-91ff-125e43b619de",
       "name": "OpenAI Chat Model",
@@ -211,8 +211,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1600,
-        544
+        2208,
+        496
       ],
       "id": "b9ff41b2-747b-4ff7-a5c7-cbe7d1b5d95b",
       "name": "Réponse",
@@ -262,8 +262,8 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        1168,
-        864
+        1376,
+        736
       ],
       "id": "8d4e8f59-d32d-4daf-a8a0-85b12ec7f743",
       "name": "Simple Memory"
@@ -568,7 +568,7 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "6894f8bd-9ba0-4580-b88b-36695ac8b8b2",
+      "id": "2bd859eb-98dc-44e6-a3a5-0123b6009bf6",
       "name": "Entrée Jarvis",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
@@ -576,13 +576,13 @@
         96,
         1040
       ],
-      "webhookId": "8606f4a2-c0ca-437e-9c4a-dff578aade93"
+      "webhookId": "16f96a44-4e98-45ca-9883-78459adfcbce"
     },
     {
       "parameters": {
         "jsCode": "const source = $('Telegram Trigger').item.json;\nconst chatId = source.message?.chat?.id ?? source.message?.from?.id ?? '';\nconst inputText = $json.text ?? $json.message?.text ?? source.message?.text ?? '';\nif (!inputText) throw new Error('Message Telegram vide après normalisation.');\nreturn [{json:{\n  channel:'telegram',\n  provider:'openai',\n  inputText:String(inputText),\n  sessionKey:'telegram:'+String(chatId),\n  telegramChatId:String(chatId),\n  conversationId:'',\n  requestId:'',\n  attachments:[]\n}}];"
       },
-      "id": "6248e829-3c78-4f36-bdff-4f4a2dbc9e76",
+      "id": "81117f03-38ae-4472-adc8-5299e287e587",
       "name": "Normaliser Telegram",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -595,7 +595,7 @@
       "parameters": {
         "jsCode": "const p = $json.body;\nif (!p || p.protocolVersion !== 1 || !['openai','claude'].includes(p.provider) || !Array.isArray(p.messages) || !p.messages.length) {\n  throw new Error('Contrat Jarvis invalide.');\n}\nconst transcript = [];\nconst binary = {};\nlet binaryIndex = 0;\nfor (const message of p.messages) {\n  const role = message.role === 'assistant' ? 'ASSISTANT' : 'UTILISATEUR';\n  let block = role + ' : ' + (message.text || '(pièce jointe sans texte)');\n  for (const attachment of (message.attachments || [])) {\n    block += '\\n[Pièce jointe : ' + attachment.name + ' | ' + attachment.mime + ' | ' + attachment.size + ' octets]';\n    if (attachment.extractedText) {\n      block += '\\nContenu extrait :\\n' + String(attachment.extractedText).slice(0, 120000);\n    }\n    if (attachment.data && /^image\\/(png|jpe?g|webp)$/i.test(attachment.mime || '')) {\n      binary['image_' + binaryIndex++] = {\n        data: attachment.data,\n        mimeType: attachment.mime,\n        fileName: attachment.name,\n      };\n    }\n  }\n  transcript.push(block);\n}\nlet telegramChatId = '';\ntry { telegramChatId = $vars.JARVIS_TELEGRAM_CHAT_ID || ''; } catch (_) {}\nreturn [{json:{\n  channel:'jarvis',\n  provider:p.provider,\n  inputText:transcript.join('\\n\\n'),\n  sessionKey:'jarvis:'+p.conversationId,\n  telegramChatId:String(telegramChatId),\n  conversationId:p.conversationId,\n  requestId:p.requestId,\n  attachments:p.messages.flatMap(m => m.attachments || []).map(a => ({name:a.name,mime:a.mime,size:a.size}))\n},binary}];"
       },
-      "id": "3b4d24e2-5c04-4e07-9d75-6100e492bb9e",
+      "id": "2202bfaa-c229-4ddb-99d1-6f79b338dcce",
       "name": "Normaliser Jarvis",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -608,95 +608,13 @@
       "parameters": {
         "jsCode": "return $input.all().map(item => ({json:item.json,binary:item.binary || {}}));"
       },
-      "id": "c4ddec57-ade3-49f4-b553-98126484647c",
+      "id": "3dee1085-44cb-4af7-8bd7-1399e0220a37",
       "name": "Entrée unifiée",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         992,
         656
-      ]
-    },
-    {
-      "parameters": {
-        "numberInputs": 2,
-        "rules": {
-          "rule": [
-            {
-              "modelIndex": 1,
-              "conditions": {
-                "options": {
-                  "version": 2,
-                  "leftValue": "",
-                  "caseSensitive": false,
-                  "typeValidation": "strict"
-                },
-                "combinator": "and",
-                "conditions": [
-                  {
-                    "id": "322a3bd3-082d-438e-afc1-152685cc2c35",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "leftValue": "={{ $('Entrée unifiée').item.json.provider }}",
-                    "rightValue": "openai"
-                  }
-                ]
-              }
-            },
-            {
-              "conditions": {
-                "options": {
-                  "version": 2,
-                  "leftValue": "",
-                  "caseSensitive": false,
-                  "typeValidation": "strict"
-                },
-                "combinator": "and",
-                "conditions": [
-                  {
-                    "id": "63d510fd-3e21-4ea0-8895-461881a9fa22",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "leftValue": "={{ $('Entrée unifiée').item.json.provider }}",
-                    "rightValue": "claude"
-                  }
-                ]
-              },
-              "modelIndex": 2
-            }
-          ]
-        }
-      },
-      "id": "6b2546df-a29a-4d86-adab-1feed97a9ba9",
-      "name": "Choisir OpenAI ou Claude",
-      "type": "@n8n/n8n-nodes-langchain.modelSelector",
-      "typeVersion": 1,
-      "position": [
-        992,
-        864
-      ]
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "mode": "list",
-          "value": "claude-sonnet-5-5",
-          "cachedResultName": "Claude Sonnet 5.5"
-        },
-        "options": {}
-      },
-      "id": "dfbd1cfb-178c-45a0-b3fb-485279555e38",
-      "name": "Claude Chat Model - à configurer",
-      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
-      "typeVersion": 1.3,
-      "position": [
-        1104,
-        1056
       ]
     },
     {
@@ -713,7 +631,123 @@
                 },
                 "conditions": [
                   {
-                    "id": "1b755e67-0d33-459e-a4a2-e61cd2c1bf62",
+                    "id": "65aacbdc-8c77-44fe-b630-b9266a4d4ce2",
+                    "leftValue": "={{ $json.provider }}",
+                    "rightValue": "openai",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "OpenAI"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "aaf327c1-f5ad-4c31-9bfe-cf7376491b97",
+                    "leftValue": "={{ $json.provider }}",
+                    "rightValue": "claude",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Claude"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "62a990f1-00c2-4811-b57c-cca9662123e9",
+      "name": "Choisir OpenAI ou Claude",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1168,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{\n\"Canal d'origine : \" + $('Entrée unifiée').item.json.channel\n+ \"\\nFournisseur demandé : \" + $('Entrée unifiée').item.json.provider\n+ \"\\n\\nMessage et contexte utilisateur :\\n\" + $('Entrée unifiée').item.json.inputText\n+ \"\\n\\nchatId Telegram : \" + ($('Entrée unifiée').item.json.telegramChatId || \"non configuré\")\n+ \"\\n\\nDate et heure actuelle en Europe/Paris : \"\n+ DateTime.now().setZone(\"Europe/Paris\").toFormat(\"yyyy-MM-dd'T'HH:mm:ss\")\n+ \"\\n\\nIMPORTANT : pour tous les rappels relatifs, calcule les dates à partir de l'heure Europe/Paris ci-dessus. Si le canal est Jarvis et qu'un outil exige un chatId Telegram alors qu'il vaut 'non configuré', explique clairement que JARVIS_TELEGRAM_CHAT_ID doit être configuré dans n8n.\"\n}}",
+        "options": {
+          "systemMessage": "=## Instructions ## \nTu es mon assistant personnel ultime. Ton rôle est d'orienter ma demande vers le bon outil. Tu ne dois jamais mener concrètement la tâche demandée comme écrire un e-mail, rédiger un contenu, créer une image, créer une vidéo, créer un rappel, modifier un calendrier, organiser une idée, gérer une tâche ou gérer un abonnement directement. Ta seule mission est d'activer l'outil adéquat, dans le bon ordre, avec les bonnes informations.\n\nTu dois fonctionner comme un coordinateur d'agents :\n- tu comprends la demande utilisateur ;\n- tu identifies les outils nécessaires ;\n- tu les appelles dans le bon ordre ;\n- tu transmets les informations utiles d’un outil vers l’autre ;\n- tu ne considères la tâche terminée que lorsque toutes les actions demandées ont été tentées.\n\n## Outils ##\n- emailAgent : Utilise cet outil pour vérifier, gérer, rédiger, créer des brouillons, répondre ou envoyer des emails simples sans pièce jointe réelle.\n- sendFileByEmailAgent : Utilise cet outil pour envoyer un e-mail avec une vraie pièce jointe issue d’un fichier Google Drive.\n- planifAgent : Utilise cet outil pour ajouter, supprimer ou mettre à jour des évènements dans mon calendrier Google Calendar.\n- reminderTelegramAgent : Utilise cet outil pour programmer un rappel Telegram unique qui m’enverra une notification sur mon iPhone au moment demandé.\n- recurrentAgent : Utilise cet outil pour enregistrer une règle récurrente : rappel tous les jours, toutes les semaines, tous les lundis, tous les mois, le premier de chaque mois, tous les ans, routine régulière, échéance périodique ou notification répétée.\n- taskAgent : Utilise cet outil pour enregistrer une tâche ponctuelle ou un suivi à faire, avec échéance, priorité, domaine, statut et rappels anticipés.\n- brainDumpAgent : Utilise cet outil pour stocker une pensée, une idée, une routine potentielle, une habitude, un besoin, une réflexion personnelle, un projet d’automatisation ou une observation dans mon second cerveau appelé JARVIS.\n- contactAgent : Utilise cet outil pour obtenir, modifier ou ajouter des contacts.\n- imageAgent : Utilise cet outil pour générer des images.\n- videoAgent : Utilise cet outil pour générer des vidéos.\n- contenuAgent : Utilise cet outil pour créer des articles de blog, documents texte, contenus pédagogiques, contenus web ou tout autre contenu rédigé.\n- Tavily : Utilise cet outil pour effectuer des recherches sur le web.\n\n## Règle générale — Fuseau horaire ##\nLe fuseau horaire de référence de l’utilisateur est Europe/Paris.\n\nToutes les dates et heures données par l’utilisateur doivent être interprétées comme des heures locales Europe/Paris, jamais comme des heures UTC.\n\nQuand tu transmets une date ou une heure à planifAgent, reminderTelegramAgent, recurrentAgent ou taskAgent, tu dois fournir un format ISO local sans suffixe Z.\n\nFormat attendu :\nYYYY-MM-DDTHH:mm:ss\n\nFormats interdits :\n2026-05-06T09:00:00.000Z\n2026-05-06T14:00:00.000Z\n2026-05-06T16:00:00.000Z\n\nLe suffixe Z signifie UTC et peut provoquer un décalage de 1h ou 2h.\n\nSi le message utilisateur contient :\n- « Date et heure actuelle en Europe/Paris »\n- « chatId Telegram »\n\ntu dois utiliser ces valeurs pour calculer les rappels, échéances, tâches et notifications.\n\n## Règle — JARVIS / Second cerveau ##\nSi l’utilisateur commence son message par :\n- « Jarvis »\n- « JARVIS »\n- « Second cerveau »\n- « Capture idée »\n- « Vide-tête »\n- « Note pour plus tard »\n- « Stocke cette idée »\n- « Mets ça dans mon second cerveau »\n\nalors tu dois utiliser brainDumpAgent.\n\nJARVIS est le nom du second cerveau de l’utilisateur.\n\nTu dois appeler brainDumpAgent une seule fois par message utilisateur.\n\nMême si le message contient plusieurs idées, plusieurs lignes, des puces, des numéros ou des formulations comme « ensuite », « puis », « après », tu ne dois pas découper toi-même.\n\nTu dois transmettre à brainDumpAgent le texte complet du message dans captureText.\n\nbrainDumpAgent se charge lui-même de découper les idées en plusieurs lignes si nécessaire.\n\nTu ne dois jamais faire plusieurs appels brainDumpAgent pour un même message Jarvis.\n\nExemples :\n- « Jarvis : faire de la cohérence cardiaque trois fois par jour » → un seul appel à brainDumpAgent avec le texte complet.\n- « Jarvis : 1. Faire du Qi Gong. 2. Lire Maîtriser le souffle. 3. Faire du workout. » → un seul appel à brainDumpAgent avec le texte complet.\n- « Jarvis, améliorer Materia ensuite développer un agent QG IA ensuite configurer Codex » → un seul appel à brainDumpAgent avec le texte complet.\n\nSi l’utilisateur demande explicitement un rappel avec une date ou une heure, utilise reminderTelegramAgent, recurrentAgent ou taskAgent selon le cas.\nSi l’utilisateur demande explicitement un événement calendrier, utilise planifAgent.\nSi l’utilisateur veut seulement stocker une idée, une réflexion, une routine potentielle ou un besoin, utilise brainDumpAgent.\n\n## Règle — Rappel unique Telegram ##\nSi l’utilisateur demande un rappel simple, une alerte unique ou une notification personnelle à une date/heure précise, utilise reminderTelegramAgent.\n\nExemples :\n- « Rappelle-moi demain à 9h d’appeler l’assurance »\n- « Mets-moi un rappel ce soir à 18h pour sortir les poubelles »\n- « Rappelle-moi dans 30 minutes de vérifier le mail »\n- « Envoie-moi une alerte Telegram lundi à 8h30 »\n\nTu dois transmettre à reminderTelegramAgent :\n- chatId ;\n- reminderAt ;\n- reminderText.\n\nLe champ reminderAt doit toujours être au format ISO local Europe/Paris sans suffixe Z :\nYYYY-MM-DDTHH:mm:ss\n\nSi le message utilisateur contient un champ “chatId Telegram”, tu dois utiliser cette valeur comme chatId pour reminderTelegramAgent.\n\nTu ne dois jamais inventer le chatId.\n\n## Règle — Récurrences / recurrentAgent ##\nSi l’utilisateur demande une action répétée, une routine régulière, un rappel périodique ou une échéance qui revient dans le temps, utilise recurrentAgent.\n\nDéclencheurs typiques :\n- « tous les jours »\n- « chaque jour »\n- « tous les matins »\n- « tous les soirs »\n- « tous les lundis »\n- « chaque lundi »\n- « toutes les semaines »\n- « chaque semaine »\n- « tous les mois »\n- « mensuel »\n- « le premier de chaque mois »\n- « tous les ans »\n- « annuel »\n- « chaque année »\n- « tous les 15 jours »\n- « toutes les deux semaines »\n- « tous les trimestres »\n\nExemples :\n- « Rappelle-moi tous les jours à 9h de faire ma cohérence cardiaque » → recurrentAgent.\n- « Rappelle-moi tous les lundis à 18h de préparer l’atelier IA » → recurrentAgent.\n- « Rappelle-moi le premier de chaque mois de faire mes comptes » → recurrentAgent.\n- « Rappelle-moi tous les ans de vérifier mon assurance » → recurrentAgent.\n- « Tous les soirs à 21h, rappelle-moi de préparer le lendemain » → recurrentAgent.\n\nTu dois transmettre à recurrentAgent :\n- chatId ;\n- title ;\n- description ;\n- frequency ;\n- interval si identifiable ;\n- byDay si jour de semaine identifiable ;\n- byMonthDay si jour du mois identifiable ;\n- time si heure identifiable ;\n- nextRunAt si tu peux calculer la première occurrence ;\n- category si identifiable.\n\nValeurs attendues pour frequency :\n- daily ;\n- weekly ;\n- monthly ;\n- yearly.\n\nExemples de mapping :\n- « tous les jours à 9h » :\n  - frequency = daily\n  - interval = 1\n  - time = 09:00:00\n\n- « tous les lundis à 18h » :\n  - frequency = weekly\n  - interval = 1\n  - byDay = MO\n  - time = 18:00:00\n\n- « le premier de chaque mois » :\n  - frequency = monthly\n  - interval = 1\n  - byMonthDay = 1\n\n- « tous les ans » :\n  - frequency = yearly\n  - interval = 1\n\nSi l’utilisateur demande un rappel récurrent mais ne donne pas l’heure, utilise une heure par défaut raisonnable selon le contexte :\n- matin = 08:00:00 ;\n- midi = 12:00:00 ;\n- après-midi = 15:00:00 ;\n- soir = 20:00:00 ;\n- sinon = 09:00:00.\n\nSi la demande est trop ambiguë pour créer une récurrence fiable, demande la précision manquante.\n\n## Règle — Tâches / taskAgent ##\nSi l’utilisateur demande de noter une tâche à faire, une action future, un suivi ponctuel, une échéance personnelle ou professionnelle, utilise taskAgent.\n\ntaskAgent sert à stocker une tâche dans Google Sheets avec :\n- title ;\n- description ;\n- area ;\n- priority ;\n- dueAt ;\n- dueTime si disponible ;\n- alertSchedule ;\n- nextAlertAt ;\n- status ;\n- chatId.\n\nDéclencheurs typiques :\n- « ajoute une tâche »\n- « note une tâche »\n- « je dois »\n- « il faut que je »\n- « penser à »\n- « à faire »\n- « tâche »\n- « suivre »\n- « relancer »\n- « préparer »\n- « accompagner »\n- « vérifier avant »\n- « ne pas oublier »\n\nExemples :\n- « Ajoute une tâche : accompagner Ilian au judo le 8 septembre à 18h » → taskAgent.\n- « Il faut que je prépare le dossier formation avant vendredi » → taskAgent.\n- « Penser à relancer Paul mardi prochain » → taskAgent.\n- « À faire : vérifier les inscriptions LMS avant le 15 juin » → taskAgent.\n- « Note que je dois préparer la rentrée d’Ilian » → taskAgent si c’est une vraie action à faire ; brainDumpAgent si c’est seulement une idée à garder.\n\nTu dois transmettre à taskAgent :\n- chatId ;\n- title ;\n- description ;\n- dueAt si identifiable ;\n- dueTime si identifiable ;\n- priority si identifiable ;\n- area si identifiable.\n\nValeurs possibles pour area :\n- perso/famille ;\n- pro ;\n- santé/sport ;\n- admin/budget ;\n- à classer.\n\nValeurs possibles pour priority :\n- basse ;\n- normale ;\n- haute.\n\nSi l’utilisateur donne une date ou une heure d’échéance, calcule dueAt en Europe/Paris au format :\nYYYY-MM-DDTHH:mm:ss\n\nSi l’utilisateur demande plusieurs rappels avant une tâche lointaine, taskAgent doit recevoir les informations nécessaires dans description et, si possible, alertSchedule.\n\nPar défaut, pour une tâche avec échéance lointaine, taskAgent peut prévoir des rappels anticipés :\n- J-14 ;\n- J-7 ;\n- J-3 ;\n- H-2.\n\nSi l’utilisateur précise ses propres rappels, respecte-les.\n\nExemple :\n« Accompagner Ilian au judo le mardi 8 septembre à 18h, préviens-moi deux semaines avant, une semaine avant, trois jours avant et deux heures avant »\n→ taskAgent avec dueAt = 2026-09-08T18:00:00 et alertSchedule correspondant.\n\nSi l’utilisateur veut aussi que cela apparaisse dans le calendrier, utilise aussi planifAgent.\n\n## Règle — Différence rappel unique / tâche / récurrence ##\nNe confonds jamais reminderTelegramAgent, taskAgent et recurrentAgent.\n\n- Rappel unique simple sans suivi → reminderTelegramAgent.\n- Tâche avec suivi, échéance, priorité ou rappels anticipés → taskAgent.\n- Rappel répété dans le temps → recurrentAgent.\n- Événement dans l’agenda → planifAgent.\n\nExemples :\n- « Rappelle-moi demain à 9h d’appeler l’assurance » → reminderTelegramAgent.\n- « Ajoute une tâche : appeler l’assurance demain à 9h » → taskAgent.\n- « Rappelle-moi tous les jours à 9h » → recurrentAgent.\n- « Crée un rendez-vous demain à 9h » → planifAgent + reminderTelegramAgent 1h avant.\n\n## Règle — Agenda + rappel Telegram double sécurité ##\nSi l’utilisateur demande explicitement un rendez-vous, une réunion, un événement calendrier ou un créneau horaire, utilise planifAgent.\n\nPar défaut, quand tu crées un événement calendrier, tu dois aussi créer un rappel Telegram de sécurité 1 heure avant l’événement, sauf si l’utilisateur dit explicitement qu’il ne veut pas de rappel Telegram.\n\nOrdre obligatoire :\n1. planifAgent pour créer l’événement Google Calendar ;\n2. reminderTelegramAgent pour programmer la notification Telegram.\n\nSi l’utilisateur précise un autre délai de rappel, respecte son délai.\n\nExemples :\n- « Crée un rendez-vous dentiste dans deux semaines à 9h30 » → planifAgent + reminderTelegramAgent 1h avant.\n- « Ajoute une réunion de 14h à 16h et mets-moi un rappel Telegram à 13h45 » → planifAgent + reminderTelegramAgent à 13h45.\n- « Mets ça dans mon agenda sans rappel Telegram » → planifAgent seulement.\n\n## Règle — Événement récurrent calendrier ##\nSi l’utilisateur demande explicitement un événement d’agenda récurrent, utilise planifAgent.\n\nExemples :\n- « Mets atelier IA tous les lundis de 14h à 16h dans mon agenda » → planifAgent.\n- « Crée un cours de judo tous les mardis à 18h » → planifAgent.\n- « Ajoute une réunion mensuelle le premier lundi de chaque mois » → planifAgent si possible.\n\nSi l’utilisateur veut également être notifié par Telegram pour cet événement récurrent, utilise aussi recurrentAgent.\n\nExemple :\n- « Mets atelier IA tous les lundis de 14h à 16h dans mon agenda et rappelle-moi 1h avant sur Telegram » → planifAgent + recurrentAgent.\n\n## Règle — Calcul du moment du rappel / tâche / récurrence ##\nSi l’utilisateur donne une heure précise, utilise cette heure.\n\nSi l’utilisateur demande une date relative :\n- « demain »\n- « mardi prochain »\n- « dans 10 minutes »\n- « dans 1 heure »\n- « dans deux semaines »\n- « le mois prochain »\n- « 30 minutes avant »\n- « 1 heure avant le rendez-vous »\n\ntu dois calculer la date et l’heure locale Europe/Paris correspondante, puis transmettre reminderAt, dueAt ou nextRunAt au format :\nYYYY-MM-DDTHH:mm:ss\n\nSi le calcul est impossible parce qu’il manque l’heure de l’événement ou de la tâche, demande la précision nécessaire.\n\n## Règle — Abonnements / subscriptionAgent à venir ##\nLe subscriptionAgent n’est pas encore disponible.\n\nSi l’utilisateur veut enregistrer un abonnement, un prélèvement, une date de renouvellement ou une alerte avant paiement, utilise provisoirement recurrentAgent si la périodicité est claire, ou taskAgent si l’échéance est ponctuelle.\n\nExemples :\n- « Note mon abonnement Microsoft Copilot Family à 10 € par mois, prélèvement le 5 de chaque mois, rappelle-moi 3 jours avant » → recurrentAgent pour l’alerte récurrente.\n- « Rappelle-moi chaque année avant le renouvellement Lumosity » → recurrentAgent.\n- « Je dois vérifier mon abonnement annuel avant renouvellement le 10 septembre » → taskAgent si c’est ponctuel, recurrentAgent si c’est annuel.\n- « J’ai un abonnement mais je ne connais pas la date » → brainDumpAgent pour stockage en attendant.\n\nSi l’utilisateur donne :\n- nom de l’abonnement ;\n- montant ;\n- périodicité ;\n- date de prélèvement ;\n- date de renouvellement ;\n- délai d’alerte avant prélèvement ;\n\ntu dois transmettre ces informations dans description et category = abonnement.\n\nSi la date de prélèvement ou de renouvellement est manquante, demande la précision.\n\n## Règle — Rappels longs et rappels anticipés ##\nSi l’utilisateur parle d’un événement lointain ou important et demande plusieurs alertes avant l’échéance, utilise taskAgent si c’est une tâche ou un suivi à faire.\n\nExemple :\n« Accompagner Ilian au judo le 8 septembre à 18h, préviens-moi deux semaines avant, une semaine avant, trois jours avant et deux heures avant »\n\nAction :\n- taskAgent avec dueAt = date de l’événement ;\n- alertSchedule avec J-14, J-7, J-3, H-2 ;\n- planifAgent aussi si l’utilisateur veut l’événement dans l’agenda.\n\nSi l’utilisateur demande seulement des rappels uniques sans suivi de tâche, tu peux utiliser reminderTelegramAgent plusieurs fois.\n\nSi c’est une règle qui doit se répéter tous les ans ou toutes les semaines, utiliser recurrentAgent.\n\n## Règle — Rappels, tâches, récurrences et événements ##\nNe confonds pas les objets :\n\n- Une idée ou réflexion à garder → brainDumpAgent.\n- Un rappel personnel unique → reminderTelegramAgent.\n- Une tâche avec suivi ou échéance → taskAgent.\n- Un rappel qui se répète → recurrentAgent.\n- Un rendez-vous, une réunion ou un créneau dans l’agenda → planifAgent + reminderTelegramAgent par défaut.\n- Un rendez-vous récurrent dans l’agenda → planifAgent.\n- Une notification Telegram récurrente → recurrentAgent.\n- Un rendez-vous sans rappel Telegram si l’utilisateur le refuse explicitement → planifAgent seulement.\n\n## Règles générales — Contacts ##\nCertaines actions nécessitent d'obtenir d'abord des informations de contact. Voici les actions pour lesquelles tu dois impérativement récupérer les coordonnées de contact avant d’utiliser l’outil concerné :\n\n- Envoyer un email\n- Rédiger un brouillon d'email\n- Créer un événement dans le calendrier avec un participant\n\nSi l’utilisateur donne déjà une adresse e-mail explicite, tu peux utiliser directement cette adresse sans appeler contactAgent.\n\nSi une action nécessite un destinataire humain et que l’adresse e-mail n’est pas fournie, utilise d’abord contactAgent.\n\n## Règle — Envoi simple d’e-mail ##\nSi l’utilisateur demande seulement d’envoyer, rédiger ou répondre à un e-mail sans pièce jointe réelle, utilise emailAgent.\n\nExemples :\n- « Envoie un mail à Paul pour lui dire merci » → emailAgent.\n- « Réponds à ce mail » → emailAgent.\n- « Rédige un brouillon » → emailAgent.\n\n## Règle — Interdiction de fausse pièce jointe ##\nTu ne dois jamais écrire dans un e-mail :\n- « pièce jointe »\n- « fichier joint »\n- « veuillez trouver en pièce jointe »\n\nsi aucun outil technique n’a réellement attaché le fichier à l’e-mail.\n\nSi un fichier doit être envoyé en vraie pièce jointe depuis Google Drive, tu dois utiliser sendFileByEmailAgent.\n\nemailAgent seul ne doit pas être utilisé pour envoyer une vraie pièce jointe issue de Google Drive.\n\n## Règle — Création de contenu + envoi par e-mail ##\nSi l'utilisateur demande de créer, rédiger, produire, générer ou préparer un contenu ET de l’envoyer par e-mail, tu dois exécuter la tâche en plusieurs étapes :\n\n1. Utilise d'abord contenuAgent pour créer le contenu ou le fichier demandé.\n2. Analyse la réponse de contenuAgent.\n3. Si contenuAgent retourne :\n   - hasFile=true\n   - fileSource=google_drive\n   - fileId\n   - fileName\n\n   alors utilise obligatoirement sendFileByEmailAgent pour envoyer le fichier en vraie pièce jointe.\n\n4. N’utilise pas emailAgent seul dans ce cas.\n5. Ne considère jamais la tâche comme terminée après contenuAgent si l’utilisateur a demandé un envoi par e-mail.\n\n## Règle — Google Drive vers vraie pièce jointe ##\nSi un agent retourne un fichier Google Drive avec les champs suivants :\n- hasFile=true\n- fileSource=google_drive\n- fileId\n- fileName\n\net que l’utilisateur demande un envoi par e-mail, tu dois appeler sendFileByEmailAgent.\n\nTu dois transmettre à sendFileByEmailAgent :\n- emailDestinataire\n- emailObjet\n- emailMessage\n- fileId\n- fileName\n- mimeType si disponible\n\n## Règle — Liens bloqués en entreprise ##\nLorsque l’utilisateur demande un envoi vers une adresse professionnelle ou indique que les liens Drive, Dropbox ou autres liens externes sont bloqués en entreprise, tu dois privilégier l’envoi du fichier en pièce jointe plutôt que l’envoi d’un lien.\n\nSauf exception :\n- document texte : pièce jointe ;\n- PDF : pièce jointe ;\n- image : pièce jointe ;\n- vidéo : lien ;\n- fichier très volumineux : lien.\n\n## Règle — Vidéos ##\nSi l’utilisateur demande de générer une vidéo et de l’envoyer par e-mail :\n1. utilise videoAgent ;\n2. privilégie l’envoi du lien vers la vidéo ;\n3. n’essaie pas d’envoyer la vidéo en pièce jointe sauf si l’utilisateur le demande clairement.\n\n## Règle — Images ##\nSi l’utilisateur demande de générer une image :\n- utilise imageAgent.\n\nSi l’utilisateur demande de générer une image puis de l’envoyer par e-mail :\n- si imageAgent sait déjà envoyer ou fournir l’image comme pièce jointe, utilise le flux prévu ;\n- si l’image est sauvegardée dans Google Drive avec fileId, utilise sendFileByEmailAgent pour l’envoyer en vraie pièce jointe.\n\n## Règle — Calendrier + email ##\nSi l’utilisateur demande de créer un événement puis de prévenir quelqu’un par e-mail :\n1. utilise contactAgent si le destinataire n’est pas fourni avec une adresse e-mail ;\n2. utilise planifAgent pour créer l’événement ;\n3. utilise emailAgent pour envoyer la confirmation.\n\n## Règle — Ordre obligatoire des outils ##\nTu dois respecter l’ordre logique suivant :\n\n- Email simple :\n  contactAgent si nécessaire → emailAgent\n\n- Événement calendrier ponctuel :\n  contactAgent si participant sans adresse → planifAgent → reminderTelegramAgent par défaut 1h avant\n\n- Événement calendrier récurrent :\n  planifAgent → recurrentAgent si notification Telegram récurrente demandée\n\n- Rappel Telegram unique :\n  reminderTelegramAgent\n\n- Tâche ponctuelle ou suivi :\n  taskAgent\n\n- Rappel Telegram récurrent :\n  recurrentAgent\n\n- Capture JARVIS / second cerveau :\n  brainDumpAgent une seule fois par message utilisateur\n\n- Abonnement en attendant subscriptionAgent :\n  recurrentAgent si périodique, taskAgent si échéance ponctuelle, brainDumpAgent si information incomplète\n\n- Contenu seul :\n  contenuAgent\n\n- Contenu + envoi par e-mail avec vraie pièce jointe :\n  contenuAgent → sendFileByEmailAgent\n\n- Image seule :\n  imageAgent\n\n- Vidéo seule :\n  videoAgent\n\n- Vidéo + email :\n  videoAgent → emailAgent avec lien\n\n## Règle — Réponse finale ##\nTu dois répondre à l’utilisateur uniquement après avoir tenté toutes les actions demandées.\n\nLa réponse finale doit être courte et claire :\n- indique ce qui a été fait ;\n- indique si l’envoi a réussi ;\n- indique si le rappel Telegram unique a été programmé ;\n- indique si une récurrence a été enregistrée ;\n- indique si une tâche a été enregistrée ;\n- indique si une capture a été ajoutée à JARVIS ;\n- indique la date et l’heure locale Europe/Paris du rappel, de l’échéance ou de la prochaine occurrence si applicable ;\n- indique si une pièce jointe réelle a été envoyée uniquement si sendFileByEmailAgent a confirmé l’envoi.\n\n## Point Important ##\nVoici la date et l’heure actuelles : {{ $now }}\n\n## Information sur moi ##\nDigital Saurien.\n- Je suis [Décrivez votre activité ici]",
+          "passthroughBinaryImages": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        1696,
+        688
+      ],
+      "id": "522763c5-2abf-49a9-bd5e-a8401cf70383",
+      "name": "MasterAI Agent - Claude"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Entrée unifiée').item.json.sessionKey }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1696,
+        1072
+      ],
+      "id": "4a6ad572-573d-456a-878a-91e78eeb06aa",
+      "name": "Simple Memory - Claude"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-5-5",
+          "cachedResultName": "Claude Sonnet 5.5"
+        },
+        "options": {}
+      },
+      "id": "fed51491-d442-4743-b06f-4c9a00c9a08e",
+      "name": "Claude Chat Model - à configurer",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        1696,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "dbe2b6e5-4452-4dbd-978e-62e9222211c4",
                     "leftValue": "={{ $('Entrée unifiée').item.json.channel }}",
                     "rightValue": "telegram",
                     "operator": {
@@ -737,7 +771,7 @@
                 },
                 "conditions": [
                   {
-                    "id": "9c2863f1-03c1-46f9-bcd4-449eb491af3a",
+                    "id": "b7f4db42-3458-46ae-898e-ee9013723e49",
                     "leftValue": "={{ $('Entrée unifiée').item.json.channel }}",
                     "rightValue": "jarvis",
                     "operator": {
@@ -755,26 +789,26 @@
         },
         "options": {}
       },
-      "id": "32925cc3-b475-4ff8-94b1-a552d840ca7f",
+      "id": "4d77df0f-dfa0-4caa-94bc-4bfd7e34518f",
       "name": "Choisir le canal de réponse",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        1392,
-        656
+        1984,
+        608
       ]
     },
     {
       "parameters": {
         "jsCode": "const source = $('Entrée unifiée').item.json;\nreturn [{json:{\n  answer:String($json.output || ''),\n  conversationId:source.conversationId,\n  requestId:source.requestId,\n  provider:source.provider,\n  mode:'master-agent'\n}}];"
       },
-      "id": "56fed0b9-f0e0-4ed9-9bf2-0b2484331866",
+      "id": "c48d2550-50b2-4e92-95cd-56e1ad676100",
       "name": "Formater réponse Jarvis",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1600,
-        768
+        2208,
+        720
       ]
     },
     {
@@ -783,13 +817,13 @@
         "responseBody": "={{ $json }}",
         "options": {}
       },
-      "id": "744190be-c978-477e-9157-218cf6570cf9",
+      "id": "683f66c1-f27d-4ba6-9a40-854187b18fc7",
       "name": "Retour vers Jarvis",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
       "position": [
-        1808,
-        768
+        2432,
+        720
       ]
     },
     {
@@ -799,7 +833,7 @@
         "width": 760,
         "color": 5
       },
-      "id": "d002d3a9-fc56-4084-ae5c-b9cb61c5a38d",
+      "id": "3f0ce124-6ac1-4965-bc51-92ee46287c15",
       "name": "Configuration Jarvis",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -877,7 +911,7 @@
       "ai_languageModel": [
         [
           {
-            "node": "Choisir OpenAI ou Claude",
+            "node": "MasterAI Agent - OpenAI",
             "type": "ai_languageModel",
             "index": 0
           }
@@ -888,7 +922,12 @@
       "ai_tool": [
         [
           {
-            "node": "MasterAI Agent",
+            "node": "MasterAI Agent - OpenAI",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "MasterAI Agent - Claude",
             "type": "ai_tool",
             "index": 0
           }
@@ -899,7 +938,7 @@
       "ai_memory": [
         [
           {
-            "node": "MasterAI Agent",
+            "node": "MasterAI Agent - OpenAI",
             "type": "ai_memory",
             "index": 0
           }
@@ -910,7 +949,12 @@
       "ai_tool": [
         [
           {
-            "node": "MasterAI Agent",
+            "node": "MasterAI Agent - OpenAI",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "MasterAI Agent - Claude",
             "type": "ai_tool",
             "index": 0
           }
@@ -921,7 +965,12 @@
       "ai_tool": [
         [
           {
-            "node": "MasterAI Agent",
+            "node": "MasterAI Agent - OpenAI",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "MasterAI Agent - Claude",
             "type": "ai_tool",
             "index": 0
           }
@@ -932,7 +981,12 @@
       "ai_tool": [
         [
           {
-            "node": "MasterAI Agent",
+            "node": "MasterAI Agent - OpenAI",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "MasterAI Agent - Claude",
             "type": "ai_tool",
             "index": 0
           }
@@ -943,7 +997,12 @@
       "ai_tool": [
         [
           {
-            "node": "MasterAI Agent",
+            "node": "MasterAI Agent - OpenAI",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "MasterAI Agent - Claude",
             "type": "ai_tool",
             "index": 0
           }
@@ -954,19 +1013,13 @@
       "ai_tool": [
         [
           {
-            "node": "MasterAI Agent",
+            "node": "MasterAI Agent - OpenAI",
             "type": "ai_tool",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "MasterAI Agent": {
-      "main": [
-        [
+          },
           {
-            "node": "Choisir le canal de réponse",
-            "type": "main",
+            "node": "MasterAI Agent - Claude",
+            "type": "ai_tool",
             "index": 0
           }
         ]
@@ -976,7 +1029,12 @@
       "ai_tool": [
         [
           {
-            "node": "MasterAI Agent",
+            "node": "MasterAI Agent - OpenAI",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "MasterAI Agent - Claude",
             "type": "ai_tool",
             "index": 0
           }
@@ -987,7 +1045,12 @@
       "ai_tool": [
         [
           {
-            "node": "MasterAI Agent",
+            "node": "MasterAI Agent - OpenAI",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "MasterAI Agent - Claude",
             "type": "ai_tool",
             "index": 0
           }
@@ -998,7 +1061,12 @@
       "ai_tool": [
         [
           {
-            "node": "MasterAI Agent",
+            "node": "MasterAI Agent - OpenAI",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "MasterAI Agent - Claude",
             "type": "ai_tool",
             "index": 0
           }
@@ -1009,7 +1077,12 @@
       "ai_tool": [
         [
           {
-            "node": "MasterAI Agent",
+            "node": "MasterAI Agent - OpenAI",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "MasterAI Agent - Claude",
             "type": "ai_tool",
             "index": 0
           }
@@ -1020,7 +1093,12 @@
       "ai_tool": [
         [
           {
-            "node": "MasterAI Agent",
+            "node": "MasterAI Agent - OpenAI",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "MasterAI Agent - Claude",
             "type": "ai_tool",
             "index": 0
           }
@@ -1064,7 +1142,47 @@
       "main": [
         [
           {
-            "node": "MasterAI Agent",
+            "node": "Choisir OpenAI ou Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Choisir OpenAI ou Claude": {
+      "main": [
+        [
+          {
+            "node": "MasterAI Agent - OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "MasterAI Agent - Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MasterAI Agent - OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Choisir le canal de réponse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MasterAI Agent - Claude": {
+      "main": [
+        [
+          {
+            "node": "Choisir le canal de réponse",
             "type": "main",
             "index": 0
           }
@@ -1104,19 +1222,19 @@
       "ai_languageModel": [
         [
           {
-            "node": "Choisir OpenAI ou Claude",
+            "node": "MasterAI Agent - Claude",
             "type": "ai_languageModel",
-            "index": 1
+            "index": 0
           }
         ]
       ]
     },
-    "Choisir OpenAI ou Claude": {
-      "ai_languageModel": [
+    "Simple Memory - Claude": {
+      "ai_memory": [
         [
           {
-            "node": "MasterAI Agent",
-            "type": "ai_languageModel",
+            "node": "MasterAI Agent - Claude",
+            "type": "ai_memory",
             "index": 0
           }
         ]
