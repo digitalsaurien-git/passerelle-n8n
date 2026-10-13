@@ -1,0 +1,28 @@
+{
+  "request": {
+    "protocolVersion": 1,
+    "requestId": "identifiant-demande",
+    "conversationId": "identifiant-conversation",
+    "messages": [
+      {
+        "role": "user",
+        "text": "Peux-tu analyser ce document ?",
+        "attachments": [
+          {
+            "name": "notes.txt",
+            "mime": "text/plain",
+            "size": 7,
+            "data": "Qm9uam91cg=="
+          }
+        ],
+        "provider": "claude"
+      }
+    ],
+    "provider": "claude"
+  },
+  "response": {
+    "conversationId": "identifiant-conversation",
+    "answer": "Quelle est la finalité attendue de cette analyse ?",
+    "provider": "claude"
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "name": "Passerelle IA - Test de liaison",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "passerelle-test",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "618ca5fc-6239-4392-b47c-323e315c99a3",
+      "name": "Entree application",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "702d44a0-3b4e-4a65-b03c-9d88661b4820"
+    },
+    {
+      "parameters": {
+        "jsCode": "const p=$json.body;\nif(!p || p.protocolVersion!==1 || !['openai','claude'].includes(p.provider) || !Array.isArray(p.messages) || !p.messages.length) throw new Error('Contrat Passerelle IA invalide.');\nconst last=p.messages[p.messages.length-1];\nconst files=p.messages.flatMap(m=>m.attachments||[]);\nconst names=files.map(f=>f.name+' ('+f.size+' octets)').join(', ')||'aucune';\nconst answer='TEST N8N RÉUSSI — aucune IA appelée.\\n\\nModèle demandé : '+p.provider.toUpperCase()+'\\nDernier message : '+(last.text||'(pièces jointes seules)')+'\\nHistorique reçu : '+p.messages.length+' messages.\\nPièces jointes reçues : '+names+'\\n\\nQuelle précision souhaitez-vous ajouter ? Répondez dans ce même chat et joignez un autre fichier pour tester la continuité.';\nreturn [{json:{answer,conversationId:p.conversationId,requestId:p.requestId,provider:p.provider,mode:'echo'}}];"
+      },
+      "id": "ea58c349-2b60-4006-b700-e9e0856a5deb",
+      "name": "Verifier le dialogue",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "2b5ac01b-0573-4129-8339-891077536fd1",
+      "name": "Retour vers application",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        520,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Passerelle IA\n1. Entree application : choisir un credential Header Auth, nom X-Webhook-Token.\n2. Publier/activer puis copier la Production URL dans Coolify.\nVoir DEMARRER-ICI.html pour le pas-à-pas. Aucun identifiant inclus dans cet export.",
+        "height": 230,
+        "width": 760
+      },
+      "id": "ff121687-a241-40db-b300-c5db4155fd05",
+      "name": "A lire avant activation",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        30,
+        -330
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Entree application": {
+      "main": [
+        [
+          {
+            "node": "Verifier le dialogue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verifier le dialogue": {
+      "main": [
+        [
+          {
+            "node": "Retour vers application",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "executionTimeout": 210
+  },
+  "versionId": "1d13cf0f-5646-474d-a236-27fac4419b9c",
+  "tags": []
+}

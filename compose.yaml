@@ -1,0 +1,18 @@
+services:
+  passerelle:
+    build: .
+    restart: unless-stopped
+    expose:
+      - "8000"
+    environment:
+      APP_PASSWORD: ${APP_PASSWORD:?Mot de passe requis}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:?Domaines HTTPS requis}
+      APP_MODE: ${APP_MODE:-demo}
+      COOKIE_SECURE: "true"
+      N8N_WEBHOOK_URL: ${N8N_WEBHOOK_URL:-}
+      N8N_WEBHOOK_TOKEN: ${N8N_WEBHOOK_TOKEN:-}
+      DATA_DIR: /data
+    volumes:
+      - passerelle-data:/data
+volumes:
+  passerelle-data:
