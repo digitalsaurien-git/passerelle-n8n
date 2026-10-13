@@ -167,7 +167,7 @@
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1.8,
+      "typeVersion": 2.2,
       "position": [
         1168,
         656
@@ -568,7 +568,7 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "b3684622-33ee-40f9-89aa-4be39c6f4c0e",
+      "id": "6894f8bd-9ba0-4580-b88b-36695ac8b8b2",
       "name": "Entrée Jarvis",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
@@ -576,13 +576,13 @@
         96,
         1040
       ],
-      "webhookId": "85bfc972-3769-448b-813b-d5d0a9322198"
+      "webhookId": "8606f4a2-c0ca-437e-9c4a-dff578aade93"
     },
     {
       "parameters": {
         "jsCode": "const source = $('Telegram Trigger').item.json;\nconst chatId = source.message?.chat?.id ?? source.message?.from?.id ?? '';\nconst inputText = $json.text ?? $json.message?.text ?? source.message?.text ?? '';\nif (!inputText) throw new Error('Message Telegram vide après normalisation.');\nreturn [{json:{\n  channel:'telegram',\n  provider:'openai',\n  inputText:String(inputText),\n  sessionKey:'telegram:'+String(chatId),\n  telegramChatId:String(chatId),\n  conversationId:'',\n  requestId:'',\n  attachments:[]\n}}];"
       },
-      "id": "1b70cb5d-8525-4e7d-a2be-7ca8054b308a",
+      "id": "6248e829-3c78-4f36-bdff-4f4a2dbc9e76",
       "name": "Normaliser Telegram",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -595,7 +595,7 @@
       "parameters": {
         "jsCode": "const p = $json.body;\nif (!p || p.protocolVersion !== 1 || !['openai','claude'].includes(p.provider) || !Array.isArray(p.messages) || !p.messages.length) {\n  throw new Error('Contrat Jarvis invalide.');\n}\nconst transcript = [];\nconst binary = {};\nlet binaryIndex = 0;\nfor (const message of p.messages) {\n  const role = message.role === 'assistant' ? 'ASSISTANT' : 'UTILISATEUR';\n  let block = role + ' : ' + (message.text || '(pièce jointe sans texte)');\n  for (const attachment of (message.attachments || [])) {\n    block += '\\n[Pièce jointe : ' + attachment.name + ' | ' + attachment.mime + ' | ' + attachment.size + ' octets]';\n    if (attachment.extractedText) {\n      block += '\\nContenu extrait :\\n' + String(attachment.extractedText).slice(0, 120000);\n    }\n    if (attachment.data && /^image\\/(png|jpe?g|webp)$/i.test(attachment.mime || '')) {\n      binary['image_' + binaryIndex++] = {\n        data: attachment.data,\n        mimeType: attachment.mime,\n        fileName: attachment.name,\n      };\n    }\n  }\n  transcript.push(block);\n}\nlet telegramChatId = '';\ntry { telegramChatId = $vars.JARVIS_TELEGRAM_CHAT_ID || ''; } catch (_) {}\nreturn [{json:{\n  channel:'jarvis',\n  provider:p.provider,\n  inputText:transcript.join('\\n\\n'),\n  sessionKey:'jarvis:'+p.conversationId,\n  telegramChatId:String(telegramChatId),\n  conversationId:p.conversationId,\n  requestId:p.requestId,\n  attachments:p.messages.flatMap(m => m.attachments || []).map(a => ({name:a.name,mime:a.mime,size:a.size}))\n},binary}];"
       },
-      "id": "b85f692a-8812-4114-a5b0-f9f5534564e5",
+      "id": "3b4d24e2-5c04-4e07-9d75-6100e492bb9e",
       "name": "Normaliser Jarvis",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -608,7 +608,7 @@
       "parameters": {
         "jsCode": "return $input.all().map(item => ({json:item.json,binary:item.binary || {}}));"
       },
-      "id": "56d23142-32cc-42c3-b4c7-d072205abca9",
+      "id": "c4ddec57-ade3-49f4-b553-98126484647c",
       "name": "Entrée unifiée",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -619,9 +619,11 @@
     },
     {
       "parameters": {
+        "numberInputs": 2,
         "rules": {
           "rule": [
             {
+              "modelIndex": 1,
               "conditions": {
                 "options": {
                   "version": 2,
@@ -632,7 +634,7 @@
                 "combinator": "and",
                 "conditions": [
                   {
-                    "id": "9075e860-262f-4e48-99cc-3f8493323268",
+                    "id": "322a3bd3-082d-438e-afc1-152685cc2c35",
                     "operator": {
                       "type": "string",
                       "operation": "equals"
@@ -654,7 +656,7 @@
                 "combinator": "and",
                 "conditions": [
                   {
-                    "id": "24d559bf-3525-41b4-b195-e960b21e1aac",
+                    "id": "63d510fd-3e21-4ea0-8895-461881a9fa22",
                     "operator": {
                       "type": "string",
                       "operation": "equals"
@@ -669,7 +671,7 @@
           ]
         }
       },
-      "id": "89b40e24-3827-47fd-bba5-e01fc9a87698",
+      "id": "6b2546df-a29a-4d86-adab-1feed97a9ba9",
       "name": "Choisir OpenAI ou Claude",
       "type": "@n8n/n8n-nodes-langchain.modelSelector",
       "typeVersion": 1,
@@ -688,7 +690,7 @@
         },
         "options": {}
       },
-      "id": "8a0c1d06-5b98-4964-b238-daf0018210d4",
+      "id": "dfbd1cfb-178c-45a0-b3fb-485279555e38",
       "name": "Claude Chat Model - à configurer",
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
@@ -711,7 +713,7 @@
                 },
                 "conditions": [
                   {
-                    "id": "9fddc35c-62e3-4c81-98fb-3d33ea83a9ad",
+                    "id": "1b755e67-0d33-459e-a4a2-e61cd2c1bf62",
                     "leftValue": "={{ $('Entrée unifiée').item.json.channel }}",
                     "rightValue": "telegram",
                     "operator": {
@@ -735,7 +737,7 @@
                 },
                 "conditions": [
                   {
-                    "id": "d8378a61-6c88-4f80-bbbc-667428cc1362",
+                    "id": "9c2863f1-03c1-46f9-bcd4-449eb491af3a",
                     "leftValue": "={{ $('Entrée unifiée').item.json.channel }}",
                     "rightValue": "jarvis",
                     "operator": {
@@ -753,7 +755,7 @@
         },
         "options": {}
       },
-      "id": "88c1e62f-88de-4148-9323-55e96fb812ab",
+      "id": "32925cc3-b475-4ff8-94b1-a552d840ca7f",
       "name": "Choisir le canal de réponse",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
@@ -766,7 +768,7 @@
       "parameters": {
         "jsCode": "const source = $('Entrée unifiée').item.json;\nreturn [{json:{\n  answer:String($json.output || ''),\n  conversationId:source.conversationId,\n  requestId:source.requestId,\n  provider:source.provider,\n  mode:'master-agent'\n}}];"
       },
-      "id": "c26bd772-942b-4e54-a936-3d81075a0afd",
+      "id": "56fed0b9-f0e0-4ed9-9bf2-0b2484331866",
       "name": "Formater réponse Jarvis",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -781,7 +783,7 @@
         "responseBody": "={{ $json }}",
         "options": {}
       },
-      "id": "ba488553-240d-43d7-9c8d-a4542046cbc6",
+      "id": "744190be-c978-477e-9157-218cf6570cf9",
       "name": "Retour vers Jarvis",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
@@ -797,7 +799,7 @@
         "width": 760,
         "color": 5
       },
-      "id": "4bbb55f5-b183-4fac-84fd-bdc932ad5eb0",
+      "id": "d002d3a9-fc56-4084-ae5c-b9cb61c5a38d",
       "name": "Configuration Jarvis",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
